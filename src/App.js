@@ -1,7 +1,8 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
+import React, { Component } from 'react'
 import neoData from './sample-neo.js'
+import Header from './Header'
 import './App.css';
+
 
 // API address probably will never change, so we don't put it in state
 const API = "https://api.nasa.gov/neo/rest/v1/feed"
@@ -17,10 +18,11 @@ function fetchFeed() {
 	return fetch(API +`?start_date=${formatDate(today)}&api_key=${API_KEY}`)
 
 	// the code below is the single line short hand for writing this:
-	// .then((res) => {
-	// 	return res.json()
-	// })
-	.then((res) => res.json())
+	.then((res) => {
+		console.log(res);
+		return res.json()
+	})
+	// .then((res) => res.json())
 	.then((res) => res.near_earth_objects)
 }
 
@@ -29,7 +31,8 @@ function formatDate(day) {
 	return `${day.getFullYear()}-${day.getMonth()+1}-${day.getDate()}`
 }
 
-function formAsteroid(asteroid) {
+// To keep the code cleaner, we move all this formatting logic to a separate function outside the component
+function formatAsteroid(asteroid) {
 	return {
 		id: asteroid.neo_reference_id,
 		name: asteroid.name,
@@ -53,28 +56,46 @@ class App extends Component {
 		}
 	}
 
+	// We do everything related with the fetch statement in the componentWillMount function, so that state is populated with the result of the API call before we render the component to the page
 	componentWillMount(){
+		// run the fetchFeed function fetch call, and keep the result (res)
 		fetchFeed()
 		.then((res) => {
+			// create an empty container array for the asteroids
 			let asteroids = []
+
+			// The Object.keys() method returns an array of a given object's own enumerable properties https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys
+
+			// If you want to see this new concept in action, try this:
+			// console.log(Object.keys(res));
 
 			Object.keys(res).forEach((day) => {
 				asteroids = res[day].map((asteroid) => {
-					return formAsteroid(asteroid)
+					// run the formatAsteroid function on each item in the array of days and then return all the formatted asteroids
+					return formatAsteroid(asteroid)
 				})
 			})
 
+			// watch when this runs to see how the timeout below is affecting the UX
 			console.log("finished formatting data")
 
-			// state is updated when promises are resolved
-			setTimeout(() => {
-				this.setState({
-					asteroids,
-					status: "loaded"
-				})
-			}, 1000)
+			// state is updated when promises are resolved, setTimeout adds a second to the load time
+			// setTimeout(() => {
+			// 	this.setState({
+			// 		asteroids,
+			// 		status: "loaded"
+			// 	})
+			// }, 1000)
+
+			this.setState({
+				asteroids,
+				status: "loaded"
+			})
+
 		})
+		// we put the catch here inside the component, instead of in the fetchFeed function, so that we can record any errors caught into state
 		.catch((err) => {
+			// console.log(err);
 			this.setState({
 				error: err,
 			})
@@ -82,16 +103,31 @@ class App extends Component {
 	}
 
 	render() {
-		const { asteroids, status } = this.state
+		// Get all the items we need from state
+		const { asteroids, error, status } = this.state
+
+		// display any errors
+		let err;
+
+		if(error != undefined){
+			err = error
+		}
 
 		let content;
+
+		// TODO: show a component with table view of all dangerous asteroids
 
 		switch (status) {
 			case 'loaded':
 				content =  (
-					<p className="App-intro">
-						Number of objects dangerously close to earth: {asteroids.length}
-					</p>
+					<section>
+						<h3>
+							Number of objects dangerously close to earth today: {asteroids.length}
+						</h3>
+						<div>
+							TABLE VIEW HERE
+						</div>
+					</section>
 				)
 				break;
 			case 'loading':
@@ -103,11 +139,9 @@ class App extends Component {
 
 		return (
 			<div className="App">
-				<header className="App-header">
-					<img src={logo} className="App-logo" alt="logo" />
-					<h1 className="App-title">Welcome to React</h1>
-				</header>
+				< Header />
 				<main>
+					{err}
 					{content}
 				</main>
 			</div>
