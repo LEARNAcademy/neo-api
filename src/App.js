@@ -3,18 +3,28 @@ import logo from './logo.svg';
 import neoData from './sample-neo.js'
 import './App.css';
 
-
+// API address probably will never change, so we don't put it in state
 const API = "https://api.nasa.gov/neo/rest/v1/feed"
+
+// API KEYS should be held somewhere secure, but for now this will work
 const API_KEY = "EzDRfkQivFWxU6WFy6KHZ0vMFd1WmmvURashUVuP"
 
+// fetchfeed function will be responsible for making the initial call to the API
 function fetchFeed() {
+	// get a new date
 	const today = new Date()
 
 	return fetch(API +`?start_date=${formatDate(today)}&api_key=${API_KEY}`)
+
+	// the code below is the single line short hand for writing this:
+	// .then((res) => {
+	// 	return res.json()
+	// })
 	.then((res) => res.json())
 	.then((res) => res.near_earth_objects)
 }
 
+// For cleaner code, we put the code responsible for formating the date into its own function
 function formatDate(day) {
 	return `${day.getFullYear()}-${day.getMonth()+1}-${day.getDate()}`
 }
